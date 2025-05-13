@@ -1,0 +1,106 @@
+﻿services:
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    environment:
+      DB_NAME_SQL: N5
+      SERVER_NAME_SQL: sqlserver
+      SERVER_PORT: 1433
+      SA_USER: sa
+      SA_PASSWORD: "Admin1234"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "4000:1433"
+    healthcheck:
+        test: [ "CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "Admin1234", "-Q", "SELECT 1" ]
+        interval: 10s
+        timeout: 5s
+        retries: 10
+
+  zookeeper:
+    image: wurstmeister/zookeeper:latest
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: wurstmeister/kafka:latest
+    environment:
+      KAFKA_LISTENER_SECURITY_PROTOCOL: PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_NAME: INSIDE
+      KAFKA_LISTENER_PORT: 9092
+      KAFKA_LISTENER: INSIDE://0.0.0.0:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_BOOTSTRAP: kafka:9092
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: kafkaui
+    depends_on:
+     - kafka
+    ports:
+     - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181  
+
+  elasticsearch:
+    image: elasticsearch:8.12.2
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.transport.ssl.enabled=false
+    ports:
+      - "9200:9200"
+
+  kibana:
+    image: kibana:8.12.2
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+  app:
+    build: 
+        context: ./src
+    container_name: n5-api
+    ports:
+      - "5000:80"
+      - "443:443" 
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ELASTIC_URL=http://elasticsearch:9200
+      - ELASTIC_DEFAULT_INDEX=N5    
+      - KAFKA_BOOTSTRAP=kafka:9092
+      - ConnectionString=Server=sqlserver,1433;Database=N5;User Id=sa;Password=Admin1234;Encrypt=False;TrustServerCertificate=True;
+      - KafkaSettings__Hostname=kafka
+      - KafkaSettings__Port=9092
+      - KafkaSettings__Topic=KAFKA_TOPIC
+      - WebHostURL=http://0.0.0.0:80 
+    depends_on:
+      - kafka
+      - elasticsearch
+      - sqlserver
+
+    command: >
+        bash -c "
+        echo 'Esperando a SQL Server...' &&
+        until sqlcmd -S sqlserver,1433 -U sa -P Admin1234 -Q 'SELECT 1' > /dev/null 2>&1;
+        do echo 'SQL Server no listo - esperando...'; sleep 5; done;
+        echo 'SQL Server listo. Iniciando aplicación...' &&
+        dotnet N5WebApi.dll"
