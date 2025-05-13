@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+﻿FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 EXPOSE 80
 EXPOSE 81
@@ -21,13 +21,15 @@ WORKDIR /app
 
 COPY --from=publish /app/publish .
 
+COPY wait-for-it.sh /usr/local/bin/wait-for-it.sh
+RUN chmod +x /usr/local/bin/wait-for-it.sh
+
+
 RUN apt-get update && \
     apt-get install -y curl gnupg apt-transport-https && \
     curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
     curl https://packages.microsoft.com/config/debian/11/prod.list > /etc/apt/sources.list.d/mssql-release.list && \
     apt-get update && \
-    ACCEPT_EULA=Y apt-get install -y mssql-tools unixodbc-dev && \
+    ACCEPT_EULA=Y apt-get install -y mssql-tools unixodbc-dev netcat-openbsd && \
     echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc && \
     apt-get clean
-
-ENTRYPOINT ["dotnet", "N5WebApi.dll"]

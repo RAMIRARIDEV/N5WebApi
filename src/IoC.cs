@@ -53,7 +53,6 @@ public static class IoC
     public static void AddDataBase(this IServiceCollection services, IConfiguration configuration)
     {
         string connectionString = Environment.GetEnvironmentVariable("ConnectionString") ?? configuration["ConnectionString"] ?? "";
-        Console.WriteLine(connectionString);
         services.AddDbContext<Context>(x => x.UseSqlServer(connectionString));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
     }

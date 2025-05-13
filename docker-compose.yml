@@ -13,10 +13,10 @@
     ports:
       - "4000:1433"
     healthcheck:
-        test: [ "CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "Admin1234", "-Q", "SELECT 1" ]
-        interval: 10s
-        timeout: 5s
-        retries: 10
+      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "Admin1234", "-Q", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   zookeeper:
     image: wurstmeister/zookeeper:latest
@@ -76,31 +76,33 @@
       - elasticsearch
 
   app:
-    build: 
+      build:
         context: ./src
-    container_name: n5-api
-    ports:
-      - "5000:80"
-      - "443:443" 
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - ELASTIC_URL=http://elasticsearch:9200
-      - ELASTIC_DEFAULT_INDEX=N5    
-      - KAFKA_BOOTSTRAP=kafka:9092
-      - ConnectionString=Server=sqlserver,1433;Database=N5;User Id=sa;Password=Admin1234;Encrypt=False;TrustServerCertificate=True;
-      - KafkaSettings__Hostname=kafka
-      - KafkaSettings__Port=9092
-      - KafkaSettings__Topic=KAFKA_TOPIC
-      - WebHostURL=http://0.0.0.0:80 
-    depends_on:
-      - kafka
-      - elasticsearch
-      - sqlserver
-
-    command: >
+      container_name: n5-api
+      ports:
+        - "5000:80"
+        - "443:443"
+      environment:
+        - ASPNETCORE_ENVIRONMENT=Production
+        - ELASTIC_URL=http://elasticsearch:9200
+        - ELASTIC_DEFAULT_INDEX=N5    
+        - KAFKA_BOOTSTRAP=kafka:9092
+        - ConnectionString=Server=sqlserver,1433;Database=N5;User Id=sa;Password=Admin1234;Encrypt=False;TrustServerCertificate=True;
+        - KafkaSettings__Hostname=kafka
+        - KafkaSettings__Port=9092
+        - KafkaSettings__Topic=KAFKA_TOPIC
+        - WebHostURL=http://0.0.0.0:80 
+      depends_on:
+        - kafka
+        - elasticsearch
+        - sqlserver
+      command: >
         bash -c "
-        echo 'Esperando a SQL Server...' &&
-        until sqlcmd -S sqlserver,1433 -U sa -P Admin1234 -Q 'SELECT 1' > /dev/null 2>&1;
-        do echo 'SQL Server no listo - esperando...'; sleep 5; done;
-        echo 'SQL Server listo. Iniciando aplicación...' &&
+        echo 'Esperando SQL Server...' &&
+        until /opt/mssql-tools/bin/sqlcmd -S sqlserver,1433 -U sa -P Admin1234 -Q 'SELECT 1' > /dev/null 2>&1;
+        do echo 'SQL Server no disponible, esperando...'; sleep 5; done &&
+        echo 'SQL Server listo.' &&
+        wait-for-it.sh kafka 9092 -- echo 'Kafka listo.' &&
+        wait-for-it.sh elasticsearch 9200 -- echo 'Elasticsearch listo.' &&
+        echo 'Iniciando aplicación...' &&
         dotnet N5WebApi.dll"

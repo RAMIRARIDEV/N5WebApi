@@ -19,7 +19,7 @@ internal sealed class UpdatePermissionTypeHandler(
 {
     public async Task<Result> Handle(UpdatePermissionTypeRequest request, CancellationToken cancellationToken)
     {
-        await new UpdatePermissionTypeValidator().ValidateAndThrowAsync(request, cancellationToken);
+        new UpdatePermissionTypeValidator().ValidateAndThrow(request);
         _logger.LogInformation("Updating Permission Type Request: {request}", JsonSerializer.Serialize(request));
 
         PermissionTypes permissions = await _permissionTypesService.GetByIdAsync(request.Id);
