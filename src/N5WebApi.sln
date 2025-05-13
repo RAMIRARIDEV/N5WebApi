@@ -10,6 +10,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Elementos de la solución",
 		..\docker-compose.yml = ..\docker-compose.yml
 	EndProjectSection
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "N5WebApiTest", "..\N5WebApiTest\N5WebApiTest.csproj", "{EAD2A2F2-45FD-4B0F-B041-EAE23953513F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,6 +22,10 @@ Global
 		{2713162D-6D90-4A80-A64A-175CD9A408F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2713162D-6D90-4A80-A64A-175CD9A408F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2713162D-6D90-4A80-A64A-175CD9A408F8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EAD2A2F2-45FD-4B0F-B041-EAE23953513F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EAD2A2F2-45FD-4B0F-B041-EAE23953513F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EAD2A2F2-45FD-4B0F-B041-EAE23953513F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EAD2A2F2-45FD-4B0F-B041-EAE23953513F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
